@@ -102,7 +102,7 @@ The following subsections outline a prover's best practices in matching a creden
 
 ###### Requested Item Has Specifically Applicable Non-Revocation Interval
 
-Where a presentation request includes a non-revocation interval specifically applicable to a requested item, the prover MUST select an irrevocable credential if one satisfies; otherwise, the prover MUST select an irrevocable credential if one satisfies. If no such credential resides in the wallet, the prover MUST reject the presentation request.
+Where a presentation request includes a non-revocation interval specifically applicable to a requested item, the prover MUST select an irrevocable credential if one satisfies; otherwise, the prover MUST select a revocable credential if one satisfies. If no such credential resides in the wallet, the prover MUST reject the presentation request.
 
 > **Question:** Which is better: revocable (because the presentation request specifically asks regarding the item), or irrevocable (because it can never be revoked and hence is the most direct proof)?
 
@@ -112,7 +112,7 @@ Note that selecting an irrevocable credential for presentation may lead to a mis
 
 ###### Requested Item Has Generally Applicable Non-Revocation Interval
 
-Where a presentation request includes a non-revocation interval generally applicable to a requested item, the prover MUST select an irrevocable credential if one satisfies; otherwise, the prover MUST select an irrevocable credential if one satisfies. If no such credential resides in the wallet, the prover MUST reject the presentation request.
+Where a presentation request includes a non-revocation interval generally applicable to a requested item, the prover MUST select an irrevocable credential if one satisfies; otherwise, the prover MUST select a revocable credential if one satisfies. If no such credential resides in the wallet, the prover MUST reject the presentation request.
 
 > **Question:** Which is better: revocable (because the presentation request specifically asks regarding the item), or irrevocable (because it can never be revoked and hence is the most direct proof)?
 
@@ -162,6 +162,8 @@ for which the prover must select an irrevocable credential to satisfy requested 
 
 > **Counterpoint:** Consider a presentation request with one requested item having a specifically applicable non-revocation interval and one with only inapplicable non-revocation intervals. If the prover may choose a revocable credential to satisfy the requested item with no applicable non-revocation interval, the proof will include a non-revocation subproof on that credential. However, if a presentation request has no non-revocation intervals at all, and the prover may select revocable credentials to satisfy its requested items, the presentation will not include a non-revocation subproof and in this way the prover may present a revoked credential to appear as valid as an irrevocable credential in a proof.
 
+> **Emiliano's Note:** I think the above scenario is acceptable. Similarly to presenting an irrevocable credential to a proof containing a non-revocation interval, if the remaining restrictions on the attribute are satisfied the prover should be able to present either irrevocable or revocable credentials.
+
 > **Question:** Would it be better to choose a default (maximally inclusive, to jibe with any other items having applicable non-revocation intervals that the revocable credential may satisfy) non-revocation interval for items having only revocable credentials but only inapplicable non-revocation intervals in the presentation?
 
 > **Working Hypothesis:** To minimize the available surface for tamperning, provers should never assume default behaviour for non-revocation intervals beyond their `"from"` and `"to"` components (0 and present epoch respectively).
@@ -169,6 +171,8 @@ for which the prover must select an irrevocable credential to satisfy requested 
 > **Question:** Is it ever appropriate to interpolate a default non-revocation interval, or does the absence of any specifically or generally applicable non-revocation interval signify an explicit expectation of an irrevocable credential? Note that any item may carry restrictions by credential definition for precise formulation.
 
 > **Working Hypothesis:** To minimize the available surface for tamperning, provers should never assume default behaviour for non-revocation intervals as above. Since provers must prefer revocable credentials where they can, the absence of a non-revocation interval on a presentation request signifies a requirement for irrevocable credentials.
+
+> **Emiliano's Note:** the above working hypothesis seems to clash with the previous recommendations, see [Requested Item Has Generally Applicable Non-Revocation Interval](#requested-item-has-generally-applicable-non-revocation-interval) and [All Non-Revocation Intervals are Inapplicable to Requested Item](#all-non-revocation-intervals-are-inapplicable-to-requested-item).
 
 ### Verifiers and Presentations
 
@@ -240,6 +244,8 @@ against a proof presentation on a single credential
 }
 ```
 
+> **Emiliano's Note:** This hypothesis would be true if using the `names` array to specify the restrictions for the attributes. In the above example it should be possible to present two different credentials to satisfy the proof, and `legalName` could very well accept an irrevocable credential (I may be missing something in my logic).
+
 is incorrect: no single (revocable) credential can satisfy both `"legalname"` and `"regdate"` requested attributes as the presentation request specifies them.
 
 #### Missing Timestamp
@@ -261,6 +267,10 @@ In all other cases where a presented timestamp falls outside the applicable non-
 > **Question:**  What does logging entail, from a standards point of view?
 
 > **Working Hypothesis:** Leave it underspecified and leave it to the implementation.
+
+#### Timestamp With Non-Matching From and To Boundaries
+
+The verifier MUST log an error and reject a presentation where the values of `from` and `to` in a non-revocation interval - globally or specifically applicable - do not match. See [this](https://github.com/hyperledger/aries-agent-test-harness/pull/116#issuecomment-730685835).
 
 ## Reference
 
